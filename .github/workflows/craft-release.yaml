@@ -1,6 +1,8 @@
 name: Create Release & And push Docker image
 
 env:
+  DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-asignment-operator
+  DOCKER_BUILDKIT: 1
   MILESTONE: ${{ github.event.milestone.title }}
 on:
   milestone:
