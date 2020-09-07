@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+if [[ $1 == "--config" ]] ; then
+  cat <<EOF
+{
+  "configVersion":"v1",
+  "kubernetes":[{
+    "apiVersion": "wyrihaximus.net/v1",
+    "kind": "RedisDatabase",
+    "executeHookOnEvent":["Added"]
+  }]
+}
+EOF
+else
+  type=$(jq -r '.[0].type' ${BINDING_CONTEXT_PATH})
+  echo "Event: ${type}"
+  if [[ $type == "Event" ]] ; then
+    /engine/add.sh $(jq -r -c '.[0].object' ${BINDING_CONTEXT_PATH})
+  fi
+fi
