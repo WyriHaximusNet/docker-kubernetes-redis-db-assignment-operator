@@ -1,0 +1,31 @@
+name: Continuous Integration
+env:
+  DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-asignment-operator
+  DOCKER_BUILDKIT: 1
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint Dockerfile
+        uses: docker://hadolint/hadolint:latest-debian
+        with:
+          entrypoint: hadolint
+          args: Dockerfile
+  build:
+    needs:
+      - lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build . -t "${DOCKER_IMAGE}:ci-latest"
+      - run: docker images
