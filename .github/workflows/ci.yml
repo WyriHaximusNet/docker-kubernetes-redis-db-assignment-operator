@@ -27,5 +27,5 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - run: docker docker . -t "${DOCKER_IMAGE}:ci-latest"
+      - run: docker build . -t "${DOCKER_IMAGE}:ci-latest"
       - run: docker images
