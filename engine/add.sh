@@ -6,7 +6,7 @@ namespace=$(echo "$json" | jq -r '.metadata.namespace')
 kind=$(echo "$json" | jq -r '.kind')
 secret=$(echo "$json" | jq -r '.spec.secret.name')
 read=$(echo "$json" | jq -r '.spec.service.read')
-write=$(echo "$json" | jq -r '.spec.service.read')
+write=$(echo "$json" | jq -r '.spec.service.write')
 echo "${namespace}/${name} object is added"
 echo "${namespace}/${secret} is target secret"
 echo "${read} is read service"
@@ -31,7 +31,7 @@ if [[ "$?" == "1" ]] ; then
       isDatabaseFree=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r '.data.dbs' | jq ".[\"${write}\"].db${i}" | grep free | wc -l)
       if [[ "$isDatabaseFree" == "1" ]] ; then
         echo "Database ${i} is available"
-        kubectl create secret generic "${secret}" -n "${namespace}" --from-literal=database="${i}" --from-literal=read="${read}" --from-literal=write="${write}"
+        kubectl create secret generic "${secret}" -n "${namespace}" --from-literal=database="${i}" --from-literal=read="${read}${i}" --from-literal=write="${write}${i}"
         kubectl create configmap redis-database-assignment-operator-in-use-dbs-list --from-literal=dbs=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r '.data.dbs' | jq -r ". * {\"${write}\": {\"db${i}\": \"${namespace}/${secret}\"}}" | jq -c) --dry-run -o yaml | kubectl apply -f -
         echo "Database ${i} has now been claimed"
         break
