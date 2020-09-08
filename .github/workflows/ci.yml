@@ -1,6 +1,6 @@
 name: Continuous Integration
 env:
-  DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-asignment-operator
+  DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-assignment-operator
   DOCKER_BUILDKIT: 1
 on:
   push:
