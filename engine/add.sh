@@ -99,7 +99,7 @@ if [[ "$?" == "1" ]] ; then
       isDatabaseFree=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r '.data.dbs' | jq ".[\"${uri_host_port}\"].db${i}" | grep free | wc -l)
       if [[ "$isDatabaseFree" == "1" ]] ; then
         echo "Database ${i} is available"
-        kubectl create secret generic "${secret}" -n "${namespace}" --from-literal=database="${i}" --from-literal=read="${read_dsn}${i}" --from-literal=write="${write_dsn}${i}"
+        kubectl create secret generic "${secret}" -n "${namespace}" --from-literal=DATABASE="${i}" --from-literal=READ="${read_dsn}${i}" --from-literal=WRITE="${write_dsn}${i}"
         kubectl create configmap redis-database-assignment-operator-in-use-dbs-list --from-literal=dbs=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r '.data.dbs' | jq -r ". * {\"${uri_host_port}\": {\"db${i}\": \"${namespace}/${secret}\"}}" | jq -c) --dry-run -o yaml | kubectl apply -f -
         echo "Database ${i} has now been claimed"
         break
