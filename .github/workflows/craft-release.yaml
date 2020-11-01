@@ -3,12 +3,24 @@ name: Create Release & And push Docker image
 env:
   DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-assignment-operator
   DOCKER_BUILDKIT: 1
+  DOCKER_IMAGE_REGISTRIES_SECRET_MAPPING: '{"ghcr.io":"GHCR_TOKEN","docker.io":"HUB_PASSCODE"}'
   MILESTONE: ${{ github.event.milestone.title }}
 on:
   milestone:
     types:
       - closed
 jobs:
+  registry-matrix:
+    name: Extract registries from registry secret mapping
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.registry-matrix.outputs.registry }}
+    steps:
+      - uses: actions/checkout@v1
+      - id: registry-matrix
+        name: Extract registries from registry secret mapping
+        run: |
+          echo "::set-output name=registry::$(printenv DOCKER_IMAGE_REGISTRIES_SECRET_MAPPING | jq -c 'keys')"
   generate-changelog:
     name: Generate Changelog
     runs-on: ubuntu-latest
@@ -58,15 +70,24 @@ jobs:
           draft: false
           prerelease: false
   tag:
+    needs:
+      - registry-matrix
     runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        registry: ${{ fromJson(needs.registry-matrix.outputs.registry) }}
     steps:
       - uses: actions/checkout@v2
-      - run: docker build . -t "${DOCKER_IMAGE}:${{ env.MILESTONE }}"
+      - run: docker build . -t "${{ matrix.registry }}/${DOCKER_IMAGE}:${{ env.MILESTONE }}"
       - name: Login to Docker Hub
         run: |
-          echo "${{ secrets.HUB_PASSCODE }}" | \
-          docker login \
-            --username "${{ secrets.HUB_USERNAME }}" \
+          echo "${{ env.DOCKER_PASSWORD }}" | \
+          docker login ${{ matrix.registry }} \
+            --username "${{ env.DOCKER_USER }}" \
             --password-stdin
+        env:
+          DOCKER_USER: ${{ secrets.HUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets[fromJson(env.DOCKER_IMAGE_REGISTRIES_SECRET_MAPPING)[matrix.registry]] }}
       - name: Push release
-        run: docker push "${DOCKER_IMAGE}:${{ env.MILESTONE }}"
+        run: docker push "${{ matrix.registry }}/${DOCKER_IMAGE}:${{ env.MILESTONE }}"
