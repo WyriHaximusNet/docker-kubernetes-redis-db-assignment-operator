@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: redis-db-assignment-operator
+  namespace: redis
+  labels:
+    app: redis-db-assignment-operator
+    app.kubernetes.io/instance: redis-db-assignment-operator
+    app.kubernetes.io/name: redis-db-assignment-operator
+    app.kubernetes.io/version: development
+    chart: redis-db-assignment-operator
+    release: redis-db-assignment-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: redis-db-assignment-operator
+subjects:
+  - kind: ServiceAccount
+    name: redis-db-assignment-operator
+    namespace: redis
