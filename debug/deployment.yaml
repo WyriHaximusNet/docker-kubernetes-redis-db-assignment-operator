@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-db-assignment-operator
+  namespace: redis
+  labels:
+    app: redis-db-assignment-operator
+    app.kubernetes.io/instance: redis-db-assignment-operator
+    app.kubernetes.io/name: redis-db-assignment-operator
+    app.kubernetes.io/version: development
+    chart: redis-db-assignment-operator
+    release: redis-db-assignment-operator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: redis-db-assignment-operator
+      app.kubernetes.io/instance: redis-db-assignment-operator
+      app.kubernetes.io/name: redis-db-assignment-operator
+      app.kubernetes.io/version: development
+      chart: redis-db-assignment-operator
+      release: redis-db-assignment-operator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9115"
+      labels:
+        app: redis-db-assignment-operator
+        app.kubernetes.io/instance: redis-db-assignment-operator
+        app.kubernetes.io/name: redis-db-assignment-operator
+        app.kubernetes.io/version: development
+        chart: redis-db-assignment-operator
+        release: redis-db-assignment-operator
+    spec:
+      serviceAccountName: redis-db-assignment-operator
+      containers:
+        - name: redis-database-assignment-operator
+          image: "redis-db-assignment-operator:dev"
+          imagePullPolicy: Never
+          ports:
+            - name: metrics
+              containerPort: 9115
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+          startupProbe:
+            failureThreshold: 13
+            periodSeconds: 1
+            httpGet:
+              path: /
+              port: metrics
