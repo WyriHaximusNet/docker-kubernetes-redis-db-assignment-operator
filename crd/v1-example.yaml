@@ -1,3 +1,4 @@
+---
 apiVersion: wyrihaximus.net/v1
 kind: RedisDatabase
 metadata:
@@ -6,5 +7,16 @@ spec:
   secret:
     name: example-redis-database
   service:
-    read: redis://redis-follower.redis.svc.cluster.local:6379/
-    write: redis://redis-leader.redis.svc.cluster.local:6379/
+    read: redis://redis-slave.redis.svc.cluster.local:6379/
+    write: redis://redis-master.redis.svc.cluster.local:6379/
+---
+apiVersion: wyrihaximus.net/v1
+kind: RedisDatabase
+metadata:
+  name: another-example
+spec:
+  secret:
+    name: another-example-redis-database
+  service:
+    read: redis://redis-slave.redis.svc.cluster.local:6379/
+    write: redis://redis-master.redis.svc.cluster.local:6379/
