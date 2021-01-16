@@ -1,4 +1,4 @@
-FROM flant/shell-operator:latest-alpine3.11
+FROM flant/shell-operator:v1.0.0-rc.1
 
 RUN apk add --no-cache redis
 
