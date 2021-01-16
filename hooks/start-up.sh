@@ -16,10 +16,12 @@ else
   echo "Event: ${type}"
   if [[ $type == "Synchronization" ]] ; then
     /engine/init-global-database.sh
-    count=$(jq -c '.[0].objects | .[] | .object' ${BINDING_CONTEXT_PATH} | wc -l)
+    count=$(jq -c '.[].objects | .[] | .object' ${BINDING_CONTEXT_PATH} | wc -l)
     if [[ "$count" != "0" ]] ; then
       echo "Synchronizing existing redis databases"
-      jq -c '.[0].objects | .[] | .object' ${BINDING_CONTEXT_PATH} | tr '\n' '\0' | xargs -0 /engine/add.sh
+      while IFS= read -r object; do
+        /engine/add.sh "$object"
+      done< <(jq -c '.[].objects | .[] | .object' < ${BINDING_CONTEXT_PATH})
     fi
   fi
 fi

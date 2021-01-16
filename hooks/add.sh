@@ -15,6 +15,8 @@ else
   type=$(jq -r '.[0].type' ${BINDING_CONTEXT_PATH})
   echo "Event: ${type}"
   if [[ $type == "Event" ]] ; then
-    /engine/add.sh $(jq -r -c '.[0].object' ${BINDING_CONTEXT_PATH})
+    while IFS= read -r object; do
+      /engine/add.sh "$object"
+    done< <(jq -c '.[].object' < ${BINDING_CONTEXT_PATH})
   fi
 fi
