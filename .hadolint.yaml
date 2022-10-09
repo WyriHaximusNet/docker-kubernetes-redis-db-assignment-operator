@@ -1,3 +1,5 @@
 ignored:
   - DL3018 # Pin versions in apk add - See: https://github.com/hadolint/hadolint/wiki/DL3018
   - DL3020 # We're copying the scripts for this operator to work
+  - DL3047 # We're wgetting just fine
+  - DL3003 # It's only for during building redis that we cd
