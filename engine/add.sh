@@ -82,7 +82,7 @@ echo "${write} is write service"
 
 (kubectl get secret -n "${namespace}" "${secret}")
 if [[ "$?" == "1" ]] ; then
-  maxDatabases=$((redis-cli -u "${write}" CONFIG GET databases | grep -v databases) || echo "16")
+  maxDatabases=$(((redis-cli -u "${write}" CONFIG GET databases | grep -v databases) | grep -q "ERR" && echo "16") || (redis-cli -u "${write}" CONFIG GET databases | grep -v databases))
   redisServerIsKnown=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r -c '.data.dbs' | jq -r ".\"${uri_host_port}\"" | wc -l)
   if [[ "$redisServerIsKnown" == "1" ]] ; then
       kubectl create configmap redis-database-assignment-operator-in-use-dbs-list --from-literal=dbs=$(kubectl get configmap redis-database-assignment-operator-in-use-dbs-list -o json | jq -r '.data.dbs' | jq -r ". * {\"${uri_host_port}\": {}}" | jq -c) --dry-run -o yaml | kubectl apply -f -
