@@ -1,31 +1,150 @@
 name: Continuous Integration
 env:
   DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-assignment-operator
-  DOCKER_BUILDKIT: 1
 on:
   push:
-    branches:
-      - master
-  pull_request:
+  schedule:
+    - cron:  '0 0 * * 0'
 jobs:
-  lint:
+  supported-arch-matrix:
+    name: Supported processor architectures
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
+    needs:
+      - lint-dockerfile
+    outputs:
+      arch: ${{ steps.supported-arch-matrix.outputs.arch }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - id: supported-arch-matrix
+        name: Generate Arch
+        run: |
+          echo "arch=[\"linux/amd64\",\"linux/arm64\"]" >> $GITHUB_OUTPUT
+  lint-dockerfile:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Lint Dockerfile
         uses: docker://hadolint/hadolint:latest-debian
         with:
           entrypoint: hadolint
-          args: Dockerfile
-  build:
-    needs:
-      - lint
-    runs-on: ubuntu-latest
+          args: ./Dockerfile
+  build-docker-image:
+    name: Build ${{ matrix.platform }} image
     strategy:
       fail-fast: false
+      matrix:
+        platform: ${{ fromJson(needs.supported-arch-matrix.outputs.arch) }}
+    needs:
+      - supported-arch-matrix
+      - lint-dockerfile
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: docker build . -t "${DOCKER_IMAGE}:ci-latest"
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v4
+      - run: mkdir ./docker-image
+      - run: docker image build --platform=${{ matrix.platform }} --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` --build-arg VCS_REF=`git rev-parse --short HEAD` -t "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" --no-cache .
+      - run: docker save "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" -o ./docker-image/docker_image-${{ env.PLATFORM_PAIR }}.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ env.PLATFORM_PAIR }}
+          path: ./docker-image
+  scan-vulnerability:
+    name: Scan for vulnerabilities (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJson(needs.supported-arch-matrix.outputs.arch) }}
+    needs:
+      - supported-arch-matrix
+      - build-docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{ env.PLATFORM_PAIR }}
+          path: /tmp/docker-image
+      - run: docker load --input /tmp/docker-image/docker_image-${{ env.PLATFORM_PAIR }}.tar
+      - run: rm -Rf /tmp/docker-image/
+      - run: echo -e "${{ env.DOCKER_IMAGE }}:${{ env.PLATFORM_PAIR }}" | xargs -I % sh -c 'docker run -v /tmp/trivy:/var/lib/trivy -v /var/run/docker.sock:/var/run/docker.sock -t aquasec/trivy:latest --cache-dir /var/lib/trivy image --exit-code 1 --no-progress --format table %'
+  push-image:
+    if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
+    name: Push
+    needs:
+      - supported-arch-matrix
+      - scan-vulnerability
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    steps:
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@v2.0
+        with:
+          format: 'YYYY.MM.DD'
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-*
+          path: /tmp/docker-image
+          merge-multiple: true
+      - run: ls -lasth /tmp/docker-image/
+      - run: |
+          for f in /tmp/docker-image/docker_image-*.tar; do
+            docker load --input $f
+          done
+      - run: rm -Rf /tmp/docker-image/
       - run: docker images
+      - run: |
+          archs=${{ join(fromJson(needs.supported-arch-matrix.outputs.arch), ',') }}
+          for arch in ${archs//,/ }
+          do
+            docker tag "${{ env.DOCKER_IMAGE }}:${arch//\//-}" "localhost:5000/${{ env.DOCKER_IMAGE }}:${arch//\//-}"
+            docker push "localhost:5000/${{ env.DOCKER_IMAGE }}:${arch//\//-}"
+          done
+      - run: docker images
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Docker info
+        run: docker info
+      - name: Create merge Dockerfile
+        run: echo "FROM localhost:5000/${{ env.DOCKER_IMAGE }}:\${TARGETOS}-\${TARGETARCH}" >> docker-file-${{ matrix.registry }}-wyrihaximusnet-github-action-runner
+      - run: cat docker-file-${{ matrix.registry }}-wyrihaximusnet-github-action-runner
+      - name: Merged different arch images into one
+        uses: docker/build-push-action@v6
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          context: .
+          file: docker-file-${{ matrix.registry }}-wyrihaximusnet-github-action-runner
+          tags: ghcr.io/${{ env.DOCKER_IMAGE }}:latest,ghcr.io/${{ env.DOCKER_IMAGE }}:${{ steps.time.outputs.time }}
+          platforms: ${{ join(fromJson(needs.supported-arch-matrix.outputs.arch), ',') }}
