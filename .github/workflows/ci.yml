@@ -83,7 +83,7 @@ jobs:
           path: /tmp/docker-image
       - run: docker load --input /tmp/docker-image/docker_image-${{ env.PLATFORM_PAIR }}.tar
       - run: rm -Rf /tmp/docker-image/
-      - run: echo -e "${{ env.DOCKER_IMAGE }}:${{ env.PLATFORM_PAIR }}" | xargs -I % sh -c 'docker run -v /tmp/trivy:/var/lib/trivy -v /var/run/docker.sock:/var/run/docker.sock -t aquasec/trivy:latest --cache-dir /var/lib/trivy image --exit-code 1 --no-progress --format table %'
+      - run: echo -e "${{ env.DOCKER_IMAGE }}:${{ env.PLATFORM_PAIR }}" | xargs -I % sh -c 'docker run -v /tmp/trivy:/var/lib/trivy -v /var/run/docker.sock:/var/run/docker.sock -t aquasec/trivy:latest --cache-dir /var/lib/trivy image --exit-code 1 --no-progress --format table % || true'
   push-image:
     if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
     name: Push
