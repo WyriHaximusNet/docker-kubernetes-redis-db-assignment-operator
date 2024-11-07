@@ -1,6 +1,6 @@
 FROM flant/shell-operator:v1.5.1
 
-RUN export REDIS_VERSION="7.0.5" && \
+RUN export REDIS_VERSION="7.4.1" && \
     export REDIS_DOWNLOAD_URL="http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" && \
     apk add --update --no-cache --virtual build-deps gcc make linux-headers musl-dev tar openssl-dev pkgconfig && \
     wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL" && \
