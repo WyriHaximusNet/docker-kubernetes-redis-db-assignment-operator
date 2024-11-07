@@ -1,4 +1,4 @@
-FROM flant/shell-operator:v1.5.0
+FROM flant/shell-operator:v1.5.1
 
 RUN export REDIS_VERSION="7.0.5" && \
     export REDIS_DOWNLOAD_URL="http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" && \
