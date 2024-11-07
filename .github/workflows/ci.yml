@@ -3,8 +3,6 @@ env:
   DOCKER_IMAGE: wyrihaximusnet/kubernetes-redis-db-assignment-operator
 on:
   push:
-  schedule:
-    - cron:  '0 0 * * 0'
 jobs:
   supported-arch-matrix:
     name: Supported processor architectures
@@ -85,7 +83,7 @@ jobs:
       - run: rm -Rf /tmp/docker-image/
       - run: echo -e "${{ env.DOCKER_IMAGE }}:${{ env.PLATFORM_PAIR }}" | xargs -I % sh -c 'docker run -v /tmp/trivy:/var/lib/trivy -v /var/run/docker.sock:/var/run/docker.sock -t aquasec/trivy:latest --cache-dir /var/lib/trivy image --exit-code 1 --no-progress --format table % || true'
   push-image:
-    if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master'
     name: Push
     needs:
       - supported-arch-matrix
