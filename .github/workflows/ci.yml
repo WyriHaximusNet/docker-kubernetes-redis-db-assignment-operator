@@ -7,16 +7,18 @@ jobs:
   supported-arch-matrix:
     name: Supported processor architectures
     runs-on: ubuntu-latest
-    needs:
-      - lint-dockerfile
     outputs:
-      arch: ${{ steps.supported-arch-matrix.outputs.arch }}
+      arch: ${{ steps.supported-arch-matrix.outputs.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Dockerfile
       - id: supported-arch-matrix
         name: Generate Arch
-        run: |
-          echo "arch=[\"linux/amd64\",\"linux/arm64\"]" >> $GITHUB_OUTPUT
+        uses: wyrihaximus/github-action-oci-image-supported-archs@initial-implementation
+#        run: |
+#          echo "arch=[\"linux/amd64\",\"linux/arm64\"]" >> $GITHUB_OUTPUT
   lint-dockerfile:
     name: Lint Dockerfile
     runs-on: ubuntu-latest
