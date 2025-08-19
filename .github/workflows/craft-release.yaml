@@ -16,7 +16,7 @@ jobs:
     outputs:
       registry: ${{ steps.registry-matrix.outputs.registry }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - id: registry-matrix
         name: Extract registries from registry secret mapping
         run: |
@@ -44,7 +44,7 @@ jobs:
       - generate-changelog
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         env:
           CHANGELOG: ${{ needs.generate-changelog.outputs.changelog }}
       - run: |
@@ -78,7 +78,7 @@ jobs:
       matrix:
         registry: ${{ fromJson(needs.registry-matrix.outputs.registry) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - run: docker build . -t "${{ matrix.registry }}/${DOCKER_IMAGE}:${{ env.MILESTONE }}"
       - name: Login to Docker Hub
         run: |
