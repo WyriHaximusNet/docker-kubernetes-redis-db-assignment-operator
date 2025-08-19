@@ -44,18 +44,18 @@ jobs:
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - run: mkdir ./docker-image
       - run: docker image build --platform=${{ matrix.platform }} --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` --build-arg VCS_REF=`git rev-parse --short HEAD` -t "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" --no-cache .
       - run: docker save "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" -o ./docker-image/docker_image-${{ env.PLATFORM_PAIR }}.tar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: docker-image-${{ env.PLATFORM_PAIR }}
           path: ./docker-image
@@ -97,13 +97,13 @@ jobs:
     steps:
       - name: Get Time
         id: time
-        uses: nanzm/get-time-action@v2.0
+        uses: nanzm/get-time-action@887e4db9af58ebae64998b7105921b816af77977 # v2.0
         with:
           format: 'YYYY.MM.DD'
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
         with:
           driver-opts: network=host
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
@@ -128,7 +128,7 @@ jobs:
       - run: docker images
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -139,7 +139,7 @@ jobs:
         run: echo "FROM localhost:5000/${{ env.DOCKER_IMAGE }}:\${TARGETOS}-\${TARGETARCH}" >> docker-file-${{ matrix.registry }}-wyrihaximusnet-github-action-runner
       - run: cat docker-file-${{ matrix.registry }}-wyrihaximusnet-github-action-runner
       - name: Merged different arch images into one
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           push: ${{ github.event_name != 'pull_request' }}
           context: .
