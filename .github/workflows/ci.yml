@@ -55,7 +55,7 @@ jobs:
       - run: mkdir ./docker-image
       - run: docker image build --platform=${{ matrix.platform }} --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` --build-arg VCS_REF=`git rev-parse --short HEAD` -t "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" --no-cache .
       - run: docker save "${DOCKER_IMAGE}:${{ env.PLATFORM_PAIR }}" -o ./docker-image/docker_image-${{ env.PLATFORM_PAIR }}.tar
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: docker-image-${{ env.PLATFORM_PAIR }}
           path: ./docker-image
