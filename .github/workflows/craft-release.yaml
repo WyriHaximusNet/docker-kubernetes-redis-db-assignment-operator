@@ -12,7 +12,7 @@ on:
 jobs:
   registry-matrix:
     name: Extract registries from registry secret mapping
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       registry: ${{ steps.registry-matrix.outputs.registry }}
     steps:
@@ -23,7 +23,7 @@ jobs:
           echo "::set-output name=registry::$(printenv DOCKER_IMAGE_REGISTRIES_SECRET_MAPPING | jq -c 'keys')"
   generate-changelog:
     name: Generate Changelog
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
@@ -42,7 +42,7 @@ jobs:
     name: Create Release
     needs:
       - generate-changelog
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         env:
@@ -72,7 +72,7 @@ jobs:
   tag:
     needs:
       - registry-matrix
-    runs-on: 'ubuntu-latest'
+    runs-on: 'blacksmith-4vcpu-ubuntu-2404'
     strategy:
       fail-fast: false
       matrix:
